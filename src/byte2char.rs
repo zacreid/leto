@@ -7,6 +7,8 @@
 
 */
 
+use std::char;
+
 pub struct Byte2Char<'a> {
     input: &'a [u8],
     length: usize,
@@ -14,6 +16,7 @@ pub struct Byte2Char<'a> {
 }
 
 impl<'a> Byte2Char<'a> {
+    #[inline(always)]
     pub fn new(input: &'a [u8]) -> Self {
         Self {
             input: input,
@@ -24,39 +27,38 @@ impl<'a> Byte2Char<'a> {
 }
 
 impl<'a> Iterator for Byte2Char<'a> {
-    type Item = [u8;5];
+    type Item = char;
 
-    #[inline]
-    fn next(&mut self) -> Option<[u8;5]> {
+    #[inline(always)]
+    fn next(&mut self) -> Option<char> {
 
         if self.length <= self.pos {
             return None;
         }
 
-        let a = self.input[self.pos];
-
-        if a < 0xC0 {
+        let current_byte = self.input[self.pos];
+        if current_byte < 0xC0 {
             self.pos += 1;
-
-            return Some([0,0,0,a, 1]);
-        } else if a < 0xE0 {
-            let b = self.input[self.pos + 1];
+            return Some((current_byte & 0x7F) as char)
+        } else if current_byte < 0xE0 {
+            let second_byte:u32 = self.input[self.pos + 1] as u32;
             self.pos += 2;
+            return char::from_u32((((current_byte as u32) & 0x1F) << 6) | (second_byte & 0x3F))
+        } else if current_byte < 0xF0 {
+            let second_byte:u32 = self.input[self.pos + 1] as u32;
+            let third_byte:u32 = self.input[self.pos + 2] as u32;
 
-            return Some([0,0,a,b, 2]);
-        } else if a < 0xF0 {
-            let b = self.input[self.pos + 1];
-            let c = self.input[self.pos + 2];
             self.pos += 3;
 
-            return Some([0,a,b,c, 3]);
+            return char::from_u32((((current_byte as u32) & 0xF) << 12) | ((second_byte & 0x3F) << 6) | (third_byte & 0x3F))
         } else {
-            let b = self.input[self.pos + 1];
-            let c = self.input[self.pos + 2];
-            let d = self.input[self.pos + 3];
+            let second_byte:u32 = self.input[self.pos + 1] as u32;
+            let third_byte:u32 = self.input[self.pos + 2] as u32;
+            let fourth_byte:u32 = self.input[self.pos + 3] as u32;
+
             self.pos += 4;
 
-            return Some([a,b,c,d, 4]);
+            return char::from_u32((((current_byte as u32) & 0x7) << 18) | ((second_byte & 0x3F) << 12) | ((third_byte & 0x3F) << 6) | (fourth_byte & 0x3F))
         }
     }
 }

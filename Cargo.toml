@@ -11,6 +11,7 @@ criterion = "0.3"
 
 [[bench]]
 name = "my_benchmarks"
+harness = false
 
 [lib]
 name = "leto"

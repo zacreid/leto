@@ -37,12 +37,15 @@ impl<'a> Iterator for Byte2Char<'a> {
         }
 
         let current_byte = self.input[self.pos];
-        if current_byte < 0xC0 {
+
+         if current_byte < 0xC0 {
             self.pos += 1;
+            
             return Some((current_byte & 0x7F) as char)
-        } else if current_byte < 0xE0 {
+        }else if current_byte < 0xE0 {
             let second_byte:u32 = self.input[self.pos + 1] as u32;
             self.pos += 2;
+
             return char::from_u32((((current_byte as u32) & 0x1F) << 6) | (second_byte & 0x3F))
         } else if current_byte < 0xF0 {
             let second_byte:u32 = self.input[self.pos + 1] as u32;
